@@ -1,0 +1,55 @@
+# Voice Assistant Configuration File
+
+# Whisper Settings
+whisper:
+  model: "tiny"  # Options: tiny, base, small, medium, large
+  # Model comparison:
+  # tiny: ~39M params, ~1GB RAM, fastest, good for testing
+  # base: ~74M params, ~1.5GB RAM, better accuracy
+  # small: ~244M params, ~2.5GB RAM, good balance
+  # medium: ~769M params, ~5GB RAM, high accuracy
+  # large: ~1550M params, ~10GB RAM, best accuracy
+  language: "en"  # Language code (en, es, pt, fr, de, etc.)
+  fp16: false  # Use FP16 (GPU only, set to false for CPU)
+
+# LLM Settings
+llm:
+  model_path: "./models/tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf"
+  context_size: 2048  # Context window size
+  threads: 4  # Number of CPU threads (adjust for your CPU)
+  gpu_layers: 0  # Number of layers to offload to GPU (0 for CPU only)
+  temperature: 0.7  # Creativity (0.0 = deterministic, 1.0 = creative)
+  top_p: 0.9  # Nucleus sampling
+  top_k: 40  # Top-K sampling
+  max_tokens: 150  # Maximum response length
+  
+  # System prompt
+  system_prompt: |
+    You are a helpful voice assistant. Give brief, clear, and natural 
+    responses suitable for speech. Keep answers under 3 sentences unless 
+    more detail is specifically requested.
+
+# Text-to-Speech Settings
+tts:
+  engine: "pyttsx3"  # TTS engine (pyttsx3, gtts, etc.)
+  rate: 165  # Speaking rate (words per minute)
+  volume: 1.0  # Volume (0.0 to 1.0)
+  voice_index: 0  # Voice to use (0 = first available)
+
+# Audio Recording Settings
+audio:
+  sample_rate: 16000  # Sample rate in Hz
+  channels: 1  # Mono audio
+  silence_threshold: 500  # Volume threshold for silence detection
+  silence_duration: 2.0  # Seconds of silence before stopping
+  recording_mode: "auto"  # "auto" or "fixed"
+  fixed_duration: 5  # Duration if using fixed recording mode
+
+# Application Settings
+app:
+  verbose: true  # Print detailed logs
+  conversation_history: false  # Keep conversation history
+  max_history: 10  # Maximum number of turns to keep
+
+
+
