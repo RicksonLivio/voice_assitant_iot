@@ -1,0 +1,59 @@
+[project]
+name = "voice-assistant"
+version = "0.1.0"
+description = "Offline Voice Assistant with Whisper, Local LLM, and TTS for CPU-based IoT Devices"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+authors = [
+    {name = "Rickson Livio de Souza Gaspar", email = "ricksonjiu-jitsu@hotmail.com"}
+]
+keywords = ["voice-assistant", "offline", "whisper", "llm", "tts", "iot"]
+dependencies = [
+    # Core
+    "typing-extensions>=4.8.0",
+    "pydantic>=2.5.0",
+    "pydantic-settings>=2.1.0",
+    "python-dotenv>=1.0.0",
+    
+    # Audio Processing - REMOVE VERSION CONSTRAINTS FOR UV
+    "openai-whisper",
+    "torch",
+    "torchaudio",
+    "numpy",
+    "scipy",
+    
+    # Audio I/O
+    "sounddevice",
+    "soundfile",
+    "pyaudio",
+    
+    # Speech Recognition & TTS
+    "pyttsx3",
+    
+    # LLM & AI
+    "llama-cpp-python",
+    
+    # Utilities
+    "click",
+    "rich",
+    "tqdm",
+    "psutil",
+    "pyyaml",
+]
+
+[project.optional-dependencies]
+dev = [
+    "black",
+    "pytest",
+]
+
+[build-system]
+requires = ["setuptools>=65.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = []  # No package structure needed for scripts
+
+
+
