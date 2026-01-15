@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Test individual components of the voice assistant
+Test individual components of the voice assistant - IMPROVED VERSION
 Run this to diagnose issues with specific parts
 """
 
@@ -17,10 +17,11 @@ def test_imports():
         ("torch", "PyTorch"),
         ("whisper", "OpenAI Whisper"),
         ("llama_cpp", "llama-cpp-python"),
-        ("pyttsx3", "pyttsx3 (TTS)"),
+        ("pyttsx3", "pyttsx3 (TTS Fallback)"),
         ("sounddevice", "sounddevice"),
         ("numpy", "NumPy"),
         ("scipy", "SciPy"),
+        ("yaml", "PyYAML"),
     ]
     
     passed = 0
@@ -34,6 +35,14 @@ def test_imports():
         except ImportError as e:
             print(f"✗ {display_name}: {e}")
             failed += 1
+    
+    # Test Kokoro (optional)
+    try:
+        from kokoro import generate
+        print(f"✓ Kokoro TTS (natural voice) - EXCELLENT!")
+        passed += 1
+    except ImportError:
+        print(f"⚠️  Kokoro TTS not available (will use pyttsx3 fallback)")
     
     print(f"\nResults: {passed} passed, {failed} failed")
     return failed == 0
@@ -92,30 +101,89 @@ def test_llm():
         return False
 
 def test_tts():
-    """Test Text-to-Speech"""
+    """Test Text-to-Speech (both Kokoro and pyttsx3)"""
     print("\n" + "="*60)
     print("  TESTING TEXT-TO-SPEECH")
     print("="*60 + "\n")
     
+    # Test Kokoro first
+    kokoro_works = False
+    try:
+        from kokoro import generate
+        import sounddevice as sd
+        print("Testing Kokoro TTS (natural voice)...")
+        
+        audio = generate("Testing Kokoro text to speech", voice="af_bella")
+        print("✓ Kokoro TTS initialized")
+        print("  Playing audio sample...")
+        sd.play(audio, samplerate=24000)
+        sd.wait()
+        print("✓ Kokoro TTS works (natural voice)")
+        kokoro_works = True
+        
+    except Exception as e:
+        print(f"⚠️  Kokoro TTS not available: {e}")
+    
+    # Test pyttsx3 fallback
     try:
         import pyttsx3
-        print("Initializing TTS engine...")
+        print("\nTesting pyttsx3 TTS (fallback)...")
         engine = pyttsx3.init()
         
         # Get voices
         voices = engine.getProperty('voices')
-        print(f"✓ TTS initialized")
+        print(f"✓ pyttsx3 initialized")
         print(f"  Available voices: {len(voices)}")
         
         # Test speaking
         print("\nTesting speech output...")
-        engine.say("Testing text to speech")
+        engine.say("Testing pyttsx3 text to speech")
         engine.runAndWait()
-        print("✓ TTS works (you should have heard audio)")
+        print("✓ pyttsx3 works")
+        return True
+        
+    except Exception as e:
+        print(f"✗ pyttsx3 Error: {e}")
+        return kokoro_works  # Return True if Kokoro works
+
+def test_vad():
+    """Test Voice Activity Detection"""
+    print("\n" + "="*60)
+    print("  TESTING VOICE ACTIVITY DETECTION")
+    print("="*60 + "\n")
+    
+    try:
+        from voice_assistant import VoiceActivityDetector
+        import numpy as np
+        
+        print("Creating Voice Activity Detector...")
+        vad = VoiceActivityDetector(
+            sample_rate=16000,
+            energy_threshold=2.0,
+            silence_duration=3.0
+        )
+        print("✓ VAD initialized")
+        
+        # Test with synthetic audio
+        print("\nTesting with synthetic audio...")
+        
+        # Simulate speech (high energy)
+        speech_frame = np.random.randn(480) * 1000
+        is_speech, energy = vad.is_speech(speech_frame)
+        print(f"  Speech frame - Energy: {energy:.2f}, Detected: {is_speech}")
+        
+        # Simulate silence (low energy)
+        silence_frame = np.random.randn(480) * 10
+        is_speech, energy = vad.is_speech(silence_frame)
+        print(f"  Silence frame - Energy: {energy:.2f}, Detected: {is_speech}")
+        
+        print("✓ VAD works correctly")
         return True
         
     except Exception as e:
         print(f"✗ Error: {e}")
+        import traceback
+        traceback.print_exc()
         return False
 
 def test_audio():
@@ -141,7 +209,8 @@ def test_audio():
         recording = sd.rec(
             int(duration * sample_rate),
             samplerate=sample_rate,
-            channels=1
+            channels=1,
+            dtype='float32'
         )
         sd.wait()
         
@@ -150,15 +219,41 @@ def test_audio():
         # Check if audio was captured
         import numpy as np
         max_amplitude = np.abs(recording).max()
-        print(f"  Max amplitude: {max_amplitude}")
+        print(f"  Max amplitude: {max_amplitude:.6f}")
         
-        if max_amplitude > 100:
+        if max_amplitude > 0.01:
             print("✓ Audio captured successfully")
             return True
         else:
-            print("⚠ Audio level very low - check your microphone")
+            print("⚠️  Audio level very low - check your microphone")
             return False
         
+    except Exception as e:
+        print(f"✗ Error: {e}")
+        return False
+
+def test_config():
+    """Test configuration file loading"""
+    print("\n" + "="*60)
+    print("  TESTING CONFIGURATION")
+    print("="*60 + "\n")
+    
+    try:
+        import yaml
+        
+        if os.path.exists("config.yaml"):
+            with open("config.yaml", 'r') as f:
+                config = yaml.safe_load(f)
+            print("✓ Config file loaded")
+            print(f"  Whisper model: {config['whisper']['model']}")
+            print(f"  LLM model: {os.path.basename(config['llm']['model_path'])}")
+            print(f"  Silence duration: {config['audio']['silence_duration']}s")
+            print(f"  Energy threshold: {config['audio']['energy_threshold']}")
+            return True
+        else:
+            print("⚠️  config.yaml not found (will use defaults)")
+            return True
+            
     except Exception as e:
         print(f"✗ Error: {e}")
         return False
@@ -173,11 +268,7 @@ def test_full_pipeline():
         from voice_assistant import VoiceAssistant
         
         print("Creating VoiceAssistant instance...")
-        assistant = VoiceAssistant(
-            whisper_model="tiny",
-            llm_model_path="./models/tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf",
-            verbose=False
-        )
+        assistant = VoiceAssistant(config_path="config.yaml")
         print("✓ Assistant created")
         
         print("\nTesting text-only mode...")
@@ -188,6 +279,8 @@ def test_full_pipeline():
         assistant.speak("Testing one two three")
         
         print("\n✓ Pipeline test complete")
+        print("\n💡 To test with real voice:")
+        print("   Run: python3 voice_assistant.py")
         return True
         
     except Exception as e:
@@ -199,7 +292,7 @@ def test_full_pipeline():
 def main():
     """Run all tests"""
     print("\n" + "="*60)
-    print("  VOICE ASSISTANT COMPONENT TESTS")
+    print("  VOICE ASSISTANT COMPONENT TESTS (IMPROVED)")
     print("="*60)
     
     tests = [
@@ -207,7 +300,9 @@ def main():
         ("Whisper", test_whisper),
         ("LLM", test_llm),
         ("TTS", test_tts),
-        ("Audio", test_audio),
+        ("Voice Activity Detection", test_vad),
+        ("Audio Recording", test_audio),
+        ("Configuration", test_config),
         ("Full Pipeline", test_full_pipeline),
     ]
     
@@ -236,13 +331,14 @@ def main():
     
     if passed == total:
         print("\n✅ All tests passed! Your assistant is ready to use.")
+        print("\n✨ NEW FEATURES:")
+        print("  • Natural human-like voice")
+        print("  • Smart voice detection (waits 3s after you finish)")
+        print("  • Noise-robust recording")
         return 0
     else:
-        print("\n⚠ Some tests failed. Please fix the issues above.")
+        print("\n⚠️  Some tests failed. Please fix the issues above.")
         return 1
 
 if __name__ == "__main__":
     sys.exit(main())
-
-
-

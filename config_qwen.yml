@@ -1,0 +1,98 @@
+# Voice Assistant Configuration - Qwen2.5:1.5B Version
+# Qwen2.5 is a superior model compared to TinyLlama with better reasoning and multilingual support
+
+# Whisper Settings
+whisper:
+  model: "tiny"  # Options: tiny, base, small, medium, large
+  # Model comparison:
+  # tiny: ~39M params, ~1GB RAM, fastest, good for testing
+  # base: ~74M params, ~1.5GB RAM, better accuracy
+  # small: ~244M params, ~2.5GB RAM, good balance
+  # medium: ~769M params, ~5GB RAM, high accuracy
+  # large: ~1550M params, ~10GB RAM, best accuracy
+  language: "en"  # Language code (en, es, pt, fr, de, etc.)
+  fp16: false  # Use FP16 (GPU only, set to false for CPU)
+
+# LLM Settings - Qwen2.5:1.5B
+llm:
+  # Qwen2.5:1.5B is a high-quality 1.5B parameter model from Alibaba
+  # Superior to TinyLlama (1.1B) in:
+  # - Better reasoning and logic
+  # - Improved multilingual support (29 languages)
+  # - Better instruction following
+  # - More coherent long-form responses
+  model_path: "./models/qwen2.5-1.5b-instruct-q4_k_m.gguf"
+  
+  # Context and Threading
+  context_size: 4096  # Qwen2.5 supports up to 32K context, 4K is good for voice
+  threads: 4  # Number of CPU threads (adjust for your CPU: 2-8 recommended)
+  gpu_layers: 0  # Number of layers to offload to GPU (0 for CPU only)
+  
+  # Generation Parameters
+  temperature: 0.7  # Creativity (0.0 = deterministic, 1.0 = very creative)
+  top_p: 0.9  # Nucleus sampling (0.9 = diverse, 0.5 = focused)
+  top_k: 40  # Top-K sampling (limits vocabulary per step)
+  max_tokens: 200  # Maximum response length (increased for Qwen's better responses)
+  repeat_penalty: 1.1  # Prevents repetition (1.0 = no penalty, 1.5 = strong penalty)
+  
+  # System prompt optimized for Qwen2.5
+  system_prompt: |
+    You are a helpful and intelligent voice assistant. Provide clear, accurate, 
+    and natural responses suitable for speech output. Keep answers concise 
+    (2-4 sentences) unless the user asks for detailed information. Be friendly, 
+    professional, and helpful.
+
+# Text-to-Speech Settings
+tts:
+  engine: "kokoro"  # TTS engine (kokoro for natural voice, pyttsx3 for fallback)
+  kokoro_voice: "af_bella"  # Kokoro voice: af, am, af_bella, af_sarah, am_adam, am_michael
+  # pyttsx3 fallback settings:
+  rate: 165  # Speaking rate (words per minute)
+  volume: 1.0  # Volume (0.0 to 1.0)
+  voice_index: 0  # Voice to use (0 = first available)
+
+# Audio Recording Settings
+audio:
+  sample_rate: 16000  # Sample rate in Hz (16kHz is optimal for Whisper)
+  channels: 1  # Mono audio
+  silence_duration: 3.0  # Seconds of silence before stopping (waits for you to finish)
+  energy_threshold: 2.0  # Energy multiplier for voice detection (higher = less sensitive)
+  # Recommended threshold values:
+  # - Quiet room: 1.5 - 2.0
+  # - Normal room: 2.0 - 3.0
+  # - Noisy environment: 3.0 - 5.0
+  # - Very noisy: 5.0 - 8.0
+  
+  # Advanced VAD settings
+  frame_duration: 0.03  # Frame duration in seconds (30ms is optimal)
+  adaptation_rate: 0.05  # Background noise adaptation speed (0.01-0.1)
+
+# Application Settings
+app:
+  verbose: true  # Print detailed logs to console
+  conversation_history: true  # Keep conversation history for context-aware responses
+  max_history: 15  # Maximum number of conversation turns to remember (Qwen handles more context better)
+  
+  # Performance settings
+  enable_streaming: false  # Stream LLM responses (not implemented yet)
+  cache_prompt: true  # Cache system prompt for faster responses
+
+# Model Comparison Notes:
+# =======================
+# TinyLlama 1.1B:
+#   - Faster inference (~2-3s per response)
+#   - Lower memory usage (~1.5GB RAM)
+#   - Good for basic conversations
+#   - Limited reasoning ability
+#   - English-focused
+#
+# Qwen2.5 1.5B:
+#   - Slightly slower (~3-5s per response)
+#   - Higher memory usage (~2GB RAM)
+#   - Excellent for complex conversations
+#   - Superior reasoning and logic
+#   - Multilingual (29 languages)
+#   - Better instruction following
+#   - More coherent responses
+#
+# Recommendation: Use Qwen2.5 for better quality, TinyLlama for speed

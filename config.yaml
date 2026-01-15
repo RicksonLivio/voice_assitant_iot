@@ -1,4 +1,4 @@
-# Voice Assistant Configuration File
+# Voice Assistant Configuration File - Improved Version
 
 # Whisper Settings
 whisper:
@@ -31,25 +31,26 @@ llm:
 
 # Text-to-Speech Settings
 tts:
-  engine: "pyttsx3"  # TTS engine (pyttsx3, gtts, etc.)
+  engine: "kokoro"  # TTS engine (kokoro for natural voice, pyttsx3 for fallback)
+  kokoro_voice: "af_bella"  # Kokoro voice: af, am, af_bella, af_sarah, am_adam, am_michael
+  # pyttsx3 fallback settings:
   rate: 165  # Speaking rate (words per minute)
   volume: 1.0  # Volume (0.0 to 1.0)
   voice_index: 0  # Voice to use (0 = first available)
 
-# Audio Recording Settings
+# Audio Recording Settings (IMPROVED)
 audio:
   sample_rate: 16000  # Sample rate in Hz
   channels: 1  # Mono audio
-  silence_threshold: 500  # Volume threshold for silence detection
-  silence_duration: 2.0  # Seconds of silence before stopping
-  recording_mode: "auto"  # "auto" or "fixed"
-  fixed_duration: 5  # Duration if using fixed recording mode
+  silence_duration: 3.0  # Seconds of silence before stopping (WAITS FOR YOU TO FINISH)
+  energy_threshold: 2.0  # Energy multiplier for voice detection (higher = less sensitive)
+  # Recommended values:
+  # - Quiet room: 1.5 - 2.0
+  # - Normal room: 2.0 - 3.0
+  # - Noisy environment: 3.0 - 5.0
 
 # Application Settings
 app:
   verbose: true  # Print detailed logs
-  conversation_history: false  # Keep conversation history
-  max_history: 10  # Maximum number of turns to keep
-
-
-
+  conversation_history: true  # Keep conversation history for context
+  max_history: 10  # Maximum number of turns to keep in memory
